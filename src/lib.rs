@@ -64,3 +64,27 @@ pub fn gen_tree() -> Rc<Node> {
 
     root
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_print_1depth_tree() {
+        let root = Rc::new(Node::new(1));
+        assert_eq!(get_tree(&vec![root], &mut vec![]), "1");
+    }
+
+    #[test]
+    fn it_print_2depth_tree() {
+        let root = Rc::new(Node::new(1));
+        let leaf_1 = Rc::new(Node::new(2));
+        let leaf_2 = Rc::new(Node::new(3));
+
+        add_child(&root, &leaf_1);
+        add_child(&root, &leaf_2);
+
+        let tree_str = get_tree(&vec![root], &mut vec![]);
+        assert_eq!(tree_str, "1\n2 3");
+    }
+}
