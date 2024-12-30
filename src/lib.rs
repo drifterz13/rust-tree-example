@@ -19,30 +19,38 @@ impl Node {
             child: RefCell::new(vec![]),
         }
     }
-}
 
-fn add_child(parent: &Rc<Node>, child: &Rc<Node>) {
-    parent.child.borrow_mut().push(Rc::clone(child));
-    *child.parent.borrow_mut() = Rc::downgrade(parent);
-}
-
-pub fn get_tree(nodes: &Vec<Rc<Node>>, result: &mut Vec<String>) -> String {
-    if nodes.len() == 0 {
-        return result.join("\n");
+    fn add_child(&self, child: &Rc<Node>) {
+        self.child.borrow_mut().push(Rc::clone(child));
+        *child.parent.borrow_mut() = Rc::downgrade(&Rc::new(self.clone()));
     }
 
-    let cur_level: Vec<String> = nodes.iter().map(|node| node.value.to_string()).collect();
-    let cur_level = cur_level.join(" ");
+    pub fn get_tree(&self) -> String {
+        let mut result: Vec<String> = Vec::new();
+        let mut level = vec![Rc::new(self.clone())];
 
-    let next_level_nodes: Vec<Rc<Node>> = nodes
-        .iter()
-        .map(|node| node.child.take())
-        .flatten()
-        .collect();
+        while !level.is_empty() {
+            let cur_level: Vec<String> = level.iter().map(|node| node.value.to_string()).collect();
+            result.push(cur_level.join(" "));
 
-    result.push(cur_level);
+            level = level
+                .iter()
+                .flat_map(|node| node.child.borrow().clone())
+                .collect()
+        }
 
-    return get_tree(&next_level_nodes, result);
+        result.join("\n")
+    }
+}
+
+impl Clone for Node {
+    fn clone(&self) -> Self {
+        Self {
+            value: self.value,
+            parent: RefCell::new(self.parent.borrow().clone()),
+            child: RefCell::new(self.child.borrow().clone()),
+        }
+    }
 }
 
 pub fn gen_tree() -> Rc<Node> {
@@ -54,13 +62,12 @@ pub fn gen_tree() -> Rc<Node> {
     let leaf_5 = Rc::new(Node::new(6));
     let leaf_6 = Rc::new(Node::new(7));
 
-    add_child(&leaf_1, &leaf_3);
-    add_child(&leaf_1, &leaf_4);
-    add_child(&leaf_2, &leaf_5);
-    add_child(&leaf_2, &leaf_6);
-
-    add_child(&root, &leaf_1);
-    add_child(&root, &leaf_2);
+    leaf_1.add_child(&leaf_3);
+    leaf_1.add_child(&leaf_4);
+    leaf_2.add_child(&leaf_5);
+    leaf_2.add_child(&leaf_6);
+    root.add_child(&leaf_1);
+    root.add_child(&leaf_2);
 
     root
 }
@@ -71,20 +78,18 @@ mod tests {
 
     #[test]
     fn it_print_1depth_tree() {
-        let root = Rc::new(Node::new(1));
-        assert_eq!(get_tree(&vec![root], &mut vec![]), "1");
+        let tree = Rc::new(Node::new(1));
+        assert_eq!(tree.get_tree(), "1");
     }
 
     #[test]
     fn it_print_2depth_tree() {
-        let root = Rc::new(Node::new(1));
+        let tree = Rc::new(Node::new(1));
         let leaf_1 = Rc::new(Node::new(2));
         let leaf_2 = Rc::new(Node::new(3));
 
-        add_child(&root, &leaf_1);
-        add_child(&root, &leaf_2);
-
-        let tree_str = get_tree(&vec![root], &mut vec![]);
-        assert_eq!(tree_str, "1\n2 3");
+        tree.add_child(&leaf_1);
+        tree.add_child(&leaf_2);
+        assert_eq!(tree.get_tree(), "1\n2 3");
     }
 }

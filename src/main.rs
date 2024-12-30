@@ -1,8 +1,7 @@
-use rust_tree::{gen_tree, get_tree};
+use rust_tree::gen_tree;
 
 fn main() {
     let tree = gen_tree();
-    let mut result = vec![];
-    let tree_str = get_tree(&vec![tree], &mut result);
+    let tree_str = tree.get_tree();
     println!("{tree_str}");
 }
